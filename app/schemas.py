@@ -1,8 +1,20 @@
 # app/schemas.py
-from pydantic import BaseModel, Field, conint
+from pydantic import BaseModel, Field, conint, EmailStr
 from typing import Optional, List, Literal
+LEVEL = Literal["beginner", "intermediate", "advanced"]
+#MEMBROS
+class ProjectMemberAdd(BaseModel):
+    collaborator_email: EmailStr
+    contributed_skill_name: str
+    contributed_skill_level: LEVEL
 
-
+class ProjectMemberRead(BaseModel):
+    id: int
+    collaborator_email: EmailStr
+    contributed_skill_name: str
+    contributed_skill_level: LEVEL
+    class Config:
+        orm_mode = True
 # TAGS
 class TagBase(BaseModel):
     name: str = Field(min_length=1, max_length=120)
@@ -18,29 +30,29 @@ class TagRead(TagBase):
     class Config:
         from_attributes = True
 
-LEVEL = Literal["beginner", "intermediate", "advanced"]
-
 # LIGAÇÃO PROJETO↔TAG
 class ProjectTagLink(BaseModel):
     tag_id: int
     skill_level: LEVEL
 
-class ProjectTagRead(BaseModel):
+class ProjectTagRead(BaseModel):            # <= mantém o nome ORIGINAL
     id: int
     tag_id: int
     name: str
-    description: Optional[str]
     skill_level: LEVEL
+    class Config:
+        orm_mode = True
 
 
 # PROJETOS
 class ProjectBase(BaseModel):
     title: str
     description: str
+    category: str
 
 
 class ProjectCreate(ProjectBase):
-    tags: Optional[List[ProjectTagLink]] = None
+    tags: List[ProjectTagLink] = []
 
 
 class ProjectUpdate(BaseModel):
@@ -50,6 +62,7 @@ class ProjectUpdate(BaseModel):
 
 class ProjectRead(ProjectBase):
     id: int
-    tags: List[ProjectTagRead]
+    tags: List[ProjectTagRead] = []
+    members: List[ProjectMemberRead] = []   # ← NOVO campo de saída
     class Config:
-        from_attributes = True
+        orm_mode = True

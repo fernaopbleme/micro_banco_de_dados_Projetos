@@ -1,12 +1,51 @@
 # app/main.py
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware  # ← importa
+from sqlalchemy import text
 
 from .database import engine, Base
 from .routers import projetos, tags
 
 Base.metadata.create_all(bind=engine)
+with engine.begin() as conn:
+    try:
+        conn.execute(text("ALTER TABLE projects ADD COLUMN category TEXT NOT NULL DEFAULT ''"))
 
+    except Exception:
+        pass  # coluna já existe
+    try:
+        conn.execute(text("""
+            CREATE TABLE IF NOT EXISTS project_members (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                project_id INTEGER NOT NULL,
+                collaborator_email VARCHAR(200) NOT NULL,
+                role VARCHAR(60),
+                UNIQUE (project_id, collaborator_email),
+                FOREIGN KEY(project_id) REFERENCES projects(id) ON DELETE CASCADE
+            )
+        """))
+    except Exception:
+        pass
+    try:
+        conn.execute(text("ALTER TABLE project_members ADD COLUMN contributed_skill_name VARCHAR(80)"))
+    except Exception:
+        pass
+    try:
+        conn.execute(text("ALTER TABLE project_members ADD COLUMN contributed_skill_level VARCHAR(20)"))
+    except Exception:
+        pass
+    try:
+        conn.execute(text("ALTER TABLE project_members DROP COLUMN role"))
+    except Exception:
+        pass
+    conn.execute(text("""
+                      UPDATE project_members
+                      SET contributed_skill_name = COALESCE(contributed_skill_name, '')
+                      """))
+    conn.execute(text("""
+                      UPDATE project_members
+                      SET contributed_skill_level = COALESCE(contributed_skill_level, 'beginner')
+                      """))
 app = FastAPI(title="Projetos (SQLite)", version="1.0.0")
 
 # === CORS (modo didático para desenvolvimento) ===
