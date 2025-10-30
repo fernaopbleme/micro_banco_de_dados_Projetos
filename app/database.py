@@ -1,32 +1,33 @@
 # app/database.py
+import os
+from typing import Generator
 from sqlalchemy import create_engine, event
 from sqlalchemy.orm import sessionmaker, DeclarativeBase, Session
-from typing import Generator
 
-SQLALCHEMY_DATABASE_URL = "sqlite:///./project.db"  # arquivo project.db na raiz
+# Lê a URL do ambiente; se não houver, usa SQLite local
+DATABASE_URL = os.getenv("DATABASE_URL", "sqlite:///./dev.db")
 
-engine = create_engine(
-    SQLALCHEMY_DATABASE_URL,
-    connect_args={"check_same_thread": False},  # necessário p/ SQLite + threads do Uvicorn
-)
+# Para SQLite: precisa desse connect_args; para Postgres, fica vazio
+connect_args = {"check_same_thread": False} if DATABASE_URL.startswith("sqlite") else {}
 
-# Habilita FKs no SQLite (senão ON DELETE CASCADE não funciona)
-@event.listens_for(engine, "connect")
-def _set_sqlite_pragma(dbapi_connection, connection_record):
-    cursor = dbapi_connection.cursor()
-    try:
-        cursor.execute("PRAGMA foreign_keys=ON")
-    finally:
-        cursor.close()
-
-# Fábrica de sessões
+engine = create_engine(DATABASE_URL, connect_args=connect_args)
 SessionLocal = sessionmaker(bind=engine, autocommit=False, autoflush=False)
 
-# Base para os modelos ORM
+# Logs de diagnóstico
+print(">> DATABASE_URL efetiva (mascarada):", DATABASE_URL.split("@")[-1])
+print(">> Dialect:", engine.dialect.name)
+
+# PRAGMA SOMENTE NO SQLITE (listener escopado ao 'engine')
+if engine.dialect.name == "sqlite":
+    @event.listens_for(engine, "connect")
+    def _sqlite_fk_on(dbapi_conn, conn_record):
+        cur = dbapi_conn.cursor()
+        cur.execute("PRAGMA foreign_keys=ON")
+        cur.close()
+
 class Base(DeclarativeBase):
     pass
 
-# Dependency de sessão para FastAPI
 def get_db() -> Generator[Session, None, None]:
     db = SessionLocal()
     try:
