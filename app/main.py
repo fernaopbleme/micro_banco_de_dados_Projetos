@@ -10,7 +10,8 @@ app = FastAPI(title="Projetos API", version="1.0.0")
 # CORS (didático)
 origins = [
     "http://localhost:5173", "http://127.0.0.1:5173",
-    "http://localhost:5500", "http://127.0.0.1:5500",
+    "http://localhost:5500", "http://127.0.0.1:5500"
+    "bdprojetos.azurewebsites.net",
 ]
 app.add_middleware(
     CORSMiddleware,

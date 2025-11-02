@@ -1,11 +1,14 @@
-# requirements.txt
+# requirements.txt (limpo e compatível com Python 3.13 / Azure App Service)
 fastapi==0.115.0
 uvicorn[standard]==0.30.0
-SQLAlchemy==2.0.34
-pydantic==2.9.2
-psycopg[binary]==3.2.3
-pydantic
-alembic
 gunicorn==22.0.0
-python-dotenv==1.0.1
 
+SQLAlchemy==2.0.34
+psycopg[binary]==3.2.3
+
+# Pydantic já com extra [email] para validar EmailStr
+pydantic[email]==2.9.2
+
+# Opcional (fixei versão para evitar surpresas)
+alembic==1.13.2
+python-dotenv==1.0.1
