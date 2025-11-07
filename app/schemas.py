@@ -60,9 +60,19 @@ class ProjectUpdate(BaseModel):
     description: Optional[str] = None
 
 
-class ProjectRead(ProjectBase):
+# class ProjectRead(ProjectBase):
+#     id: int
+#     tags: List[ProjectTagRead] = []
+#     members: List[ProjectMemberRead] = []
+#     owner_email: EmailStr | None = None# ← NOVO campo de saída
+#     class ORMModel(BaseModel):
+#         model_config = {"from_attributes": True}
+
+class ProjectRead(BaseModel):
     id: int
-    tags: List[ProjectTagRead] = []
-    members: List[ProjectMemberRead] = []   # ← NOVO campo de saída
-    class ORMModel(BaseModel):
-        model_config = {"from_attributes": True}
+    title: str
+    description: str
+    category: str
+    tags: list[ProjectTagRead]
+    members: list[ProjectMemberRead]
+    owner_email: str

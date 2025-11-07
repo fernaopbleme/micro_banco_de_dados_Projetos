@@ -1,7 +1,7 @@
 from datetime import datetime
 from sqlalchemy import (
 String, Text, Integer, ForeignKey, CheckConstraint,
-DateTime, func, UniqueConstraint
+DateTime, func, UniqueConstraint, Index
 )
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from .database import Base
@@ -31,6 +31,7 @@ class Project(Base, TimestampMixin):
     title: Mapped[str] = mapped_column(Text, nullable=False)
     description: Mapped[str] = mapped_column(Text, nullable=False)
     category: Mapped[str] = mapped_column(String(60))
+    owner_email: Mapped[str] = mapped_column(String(200), index=True)
 
     members: Mapped[list["ProjectMember"]] = relationship(
         backref="project", cascade="all, delete-orphan")

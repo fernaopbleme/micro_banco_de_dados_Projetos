@@ -1,22 +1,26 @@
-# app/main.py
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy import text
 from .database import engine, Base
 from .routers import projetos, tags
-
 app = FastAPI(title="Projetos API", version="1.0.0")
 
-# CORS (didático)
+# CORS (liste explicitamente seus fronts)
 origins = [
-    "http://localhost:5173", "http://127.0.0.1:5173",
-    "http://localhost:5500", "http://127.0.0.1:5500"
+    "http://localhost:5173",
+    "http://127.0.0.1:5173",
+    "http://localhost:5500",
+    "http://127.0.0.1:5500",
     "https://bdprojetos.azurewebsites.net",
 ]
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins= ".*", allow_credentials=True,
-    allow_methods=["*"], allow_headers=["*"],
+    allow_origins= origins,
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],           # inclui Authorization, X-User-Email etc.
 )
 
 @app.on_event("startup")
@@ -28,11 +32,23 @@ def on_startup():
     dialect = engine.dialect.name
     with engine.begin() as conn:
         if dialect == "sqlite":
+            # category
             try:
-                conn.execute(text("ALTER TABLE projects ADD COLUMN category TEXT NOT NULL DEFAULT ''"))
+                conn.execute(text(
+                    "ALTER TABLE projects ADD COLUMN category TEXT NOT NULL DEFAULT ''"
+                ))
             except Exception:
-                pass  # coluna já existe
+                pass  # já existe
 
+            # owner_email (agora usando e-mail como dono; banco vazio => simples)
+            try:
+                conn.execute(text(
+                    "ALTER TABLE projects ADD COLUMN owner_email TEXT"
+                ))
+            except Exception:
+                pass  # já existe
+
+            # members (tabela auxiliar)
             try:
                 conn.execute(text("""
                     CREATE TABLE IF NOT EXISTS project_members (
@@ -53,7 +69,9 @@ def on_startup():
             conn.execute(text(
                 "ALTER TABLE projects ADD COLUMN IF NOT EXISTS category TEXT NOT NULL DEFAULT ''"
             ))
-
+            conn.execute(text(
+                "ALTER TABLE projects ADD COLUMN IF NOT EXISTS owner_email TEXT"
+            ))
             conn.execute(text("""
                 CREATE TABLE IF NOT EXISTS project_members (
                     id SERIAL PRIMARY KEY,
@@ -72,3 +90,4 @@ app.include_router(projetos.router)
 @app.get("/healthz")
 def healthz():
     return {"status": "ok"}
+
